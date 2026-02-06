@@ -1,0 +1,1573 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+
+    <title>Documents | ArcGIS Maps SDK for JavaScript</title>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.34/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.34/"></script>
+
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+      }
+
+      .main-container {
+        display: flex;
+        height: 100%;
+        width: 100%;
+      }
+
+      .left-panel {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        min-width: 300px;
+        position: relative;
+      }
+
+      .right-panel {
+        width: 0;
+        min-width: 0;
+        max-width: 50%;
+        background: white;
+        box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+        position: relative;
+        transition: width 0.3s ease;
+        overflow: hidden;
+      }
+
+      .right-panel.visible {
+        width: 400px;
+        min-width: 300px;
+      }
+
+      .resizer-vertical {
+        width: 5px;
+        cursor: ew-resize;
+        background: #e0e0e0;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 1000;
+      }
+
+      .resizer-vertical:hover, body.is-resizing .resizer-vertical {
+        background: #0079c1;
+      }
+
+      .resizer-horizontal {
+        height: 5px;
+        cursor: ns-resize;
+        background: #e0e0e0;
+        position: relative;
+        z-index: 1000;
+        flex-shrink: 0;
+      }
+
+      .resizer-horizontal:hover, body.is-resizing .resizer-horizontal {
+        background: #0079c1;
+      }
+
+      #viewDiv {
+        height: 30%;
+        min-height: 150px;
+        width: 100%;
+      }
+
+      .table-container {
+        flex: 1;
+        min-height: 200px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      #filterContainer {
+        background: #fff;
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        flex-shrink: 0;
+      }
+
+      .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .filter-group label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #323232;
+      }
+
+      .filter-group select {
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+        min-width: 150px;
+        background: white;
+      }
+
+      #clearFilters {
+        padding: 8px 16px;
+        margin-top: 18px;
+        background: #0079c1;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      #clearFilters:hover {
+        background: #005a87;
+      }
+
+      #tableDiv {
+        flex: 1;
+        overflow: auto;
+      }
+
+      #update {
+        padding: 6px;
+      }
+
+      #bulkEdit {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        background: white;
+      }
+
+      #bulkEditHeader {
+        padding: 12px;
+        background: #f3f3f3;
+        border-bottom: 1px solid #ccc;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+      }
+
+      #bulkEditHeader h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      #closeBulkEdit {
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 0;
+        width: 24px;
+        height: 24px;
+        color: #6e6e6e;
+      }
+
+      #closeBulkEdit:hover {
+        color: #000;
+      }
+
+      #bulkEditContent {
+        padding: 12px;
+        flex: 1;
+        overflow-y: auto;
+      }
+
+      #selectedCount {
+        padding: 8px 12px;
+        background: #e7f4f9;
+        border-bottom: 1px solid #ccc;
+        font-size: 14px;
+        color: #323232;
+        flex-shrink: 0;
+      }
+
+      #bulkEditForm {
+        background: #fff;
+      }
+
+      #bulkEditActions {
+        padding: 12px;
+        border-top: 1px solid #ccc;
+        display: flex;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      #bulkEditActions button {
+        flex: 1;
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      #btnBulkUpdate {
+        background: #0079c1;
+        color: white;
+      }
+
+      #btnBulkUpdate:hover:not(:disabled) {
+        background: #005a87;
+      }
+
+      #btnBulkUpdate:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      #btnCancelBulk {
+        background: #e0e0e0;
+        color: #323232;
+      }
+
+      #btnCancelBulk:hover {
+        background: #d0d0d0;
+      }
+
+      #form {
+        background: #fff;
+      }
+
+      .scroller {
+        overflow-x: hidden;
+        overflow-y: auto;
+      }
+
+      /* Клас, який ми будемо додавати до body під час ресайзу */
+      body.is-resizing {
+        user-select: none;
+        cursor: col-resize; /* або row-resize, встановлюється в JS */
+      }
+
+      body.is-resizing #viewDiv {
+        pointer-events: none; /* Карта не "краде" події миші */
+      }
+
+      body.is-resizing .right-panel {
+        transition: none !important; /* Вимикаємо анімацію під час тягнення */
+      }
+
+      /* Переконайтеся, що ресайзери мають достатню площу для захоплення */
+      .resizer-horizontal {
+        height: 8px; /* Трохи збільшимо для зручності */
+        margin: -4px 0;
+        z-index: 20;
+      }
+
+      .resizer-vertical {
+        width: 8px;
+        margin-left: -4px;
+        z-index: 20;
+      }
+
+      /* Toast notification */
+      .toast-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease;
+      }
+
+      .toast-overlay.show {
+        display: flex;
+      }
+
+      .toast-message {
+        background: white;
+        padding: 24px 32px;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        max-width: 400px;
+        text-align: center;
+        animation: slideIn 0.3s ease;
+      }
+
+      .toast-message.success {
+        border-top: 4px solid #00c851;
+      }
+
+      .toast-message.error {
+        border-top: 4px solid #ff4444;
+      }
+
+      .toast-message.warning {
+        border-top: 4px solid #ffbb33;
+      }
+
+      .toast-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+      }
+
+      .toast-message.success .toast-icon {
+        color: #00c851;
+      }
+
+      .toast-message.error .toast-icon {
+        color: #ff4444;
+      }
+
+      .toast-message.warning .toast-icon {
+        color: #ffbb33;
+      }
+
+      .toast-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #323232;
+      }
+
+      .toast-text {
+        font-size: 14px;
+        color: #6e6e6e;
+        margin-bottom: 16px;
+      }
+
+      .toast-button {
+        background: #0079c1;
+        color: white;
+        border: none;
+        padding: 10px 24px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .toast-button:hover {
+        background: #005a87;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      @keyframes slideIn {
+        from { 
+          transform: translateY(-20px);
+          opacity: 0;
+        }
+        to { 
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+    </style>
+
+<script type="module">
+    const [Map, MapView, FeatureLayer, FeatureTable, FeatureForm, FormTemplate, reactiveUtils] = await $arcgis.import([
+      "@arcgis/core/Map.js",
+      "@arcgis/core/views/MapView.js",
+      "@arcgis/core/layers/FeatureLayer.js",
+      "@arcgis/core/widgets/FeatureTable.js",
+      "@arcgis/core/widgets/FeatureForm.js",
+      "@arcgis/core/form/FormTemplate.js",
+      "@arcgis/core/core/reactiveUtils.js",
+    ]);
+
+    let highlight, editFeature;
+    let currentFilters = {
+      oblast: null,
+      rayon: null,
+      council: null,
+      settlement: null
+    };
+    let selectedFeatures = [];
+    let bulkEditForm;
+
+      const serviceUrl =
+        "https://gis-services.htgoims.org/arcgis/rest/services/ukraine/ukr_document_flow_tasks/FeatureServer/0";
+      const featureLayer = new FeatureLayer({
+        url: serviceUrl,
+        title: "Document flow",
+        outFields: ["task_code", "task_name", "task_status", "survey_date", "oblast", "rayon", "council", "settlement", "area_surveyed", "tcp_ready", "tcp_sent", "tcp_sent_by", "tcp_sent_date", "request_for_permission", "request_permission_sent_by", "request_permission_letter_numbe", "request_permission_letter_date", "permission_number", "permission_date", "request_inspection_sent_by", "request_inspection_date", "request_inspection_answer_date", "inspection_org"],
+        formTemplate: {
+          title: "Document flow",
+          elements: [
+            {
+              type: "group",
+              label: "TCP Information",
+              elements: [
+                {
+                  type: "field",
+                  fieldName: "tcp_ready",
+                  label: "tcp ready",
+                },
+                {
+                  type: "field",
+                  fieldName: "tcp_sent",
+                  label: "tcp_sent",
+                },
+                {
+                  type: "field",
+                  fieldName: "tcp_sent_by",
+                  label: "tcp_sent_by",
+                },
+                {
+                  type: "field",
+                  fieldName: "tcp_sent_date",
+                  label: "tcp_sent_date",
+                },
+              ],
+            },
+            {
+              type: "group",
+              label: "Request for permission",
+              elements: [
+                {
+                  type: "field",
+                  fieldName: "request_for_permission",
+                  label: "request_for_permission",
+                },
+                {
+                  type: "field",
+                  fieldName: "request_permission_sent_by",
+                  label: "request_permission_sent_by",
+                },
+                {
+                  type: "field",
+                  fieldName: "request_permission_letter_numbe",
+                  label: "request_permission_letter_numbe",
+                },
+                {
+                  type: "field",
+                  fieldName: "request_permission_letter_date",
+                  label: "request_permission_letter_date",
+                },
+              ],
+            },
+            {
+              type: "group",
+              label: "permission",
+              elements: [
+                {
+                  type: "field",
+                  fieldName: "permission_number",
+                  label: "permission_number",
+                },
+                {
+                  type: "field",
+                  fieldName: "permission_date",
+                  label: "permission_date",
+                },
+              ],
+            },
+            {
+              type: "group",
+              label: "inspection",
+              elements: [
+                {
+                  type: "field",
+                  fieldName: "request_inspection_sent_by",
+                  label: "request_inspection_sent_by",
+                },
+                {
+                  type: "field",
+                  fieldName: "request_inspection_date",
+                  label: "request_inspection_date",
+                },
+                {
+                  type: "field",
+                  fieldName: "request_inspection_answer_date",
+                  label: "request_inspection_answer_date",
+                },
+                {
+                  type: "field",
+                  fieldName: "inspection_org",
+                  label: "inspection_org",
+                },
+              ],
+            },
+          ],
+          expressionInfos: [
+            {
+              name: "alwaysHidden",
+              expression: "1 == 0",
+            },
+          ],
+        },
+      });
+
+      // Create bulk edit form template (same structure but for bulk editing)
+      const bulkEditFormTemplate = new FormTemplate({
+        title: "Групове редагування",
+        description: "Змінити значення для вибраних об'єктів",
+        elements: [
+          {
+            type: "group",
+            label: "TCP Information",
+            elements: [
+              {
+                type: "field",
+                fieldName: "tcp_ready",
+                label: "tcp ready",
+              },
+              {
+                type: "field",
+                fieldName: "tcp_sent",
+                label: "tcp_sent",
+              },
+              {
+                type: "field",
+                fieldName: "tcp_sent_by",
+                label: "tcp_sent_by",
+              },
+              {
+                type: "field",
+                fieldName: "tcp_sent_date",
+                label: "tcp_sent_date",
+              },
+            ],
+          },
+          {
+            type: "group",
+            label: "Request for permission",
+            elements: [
+              {
+                type: "field",
+                fieldName: "request_for_permission",
+                label: "request_for_permission",
+              },
+              {
+                type: "field",
+                fieldName: "request_permission_sent_by",
+                label: "request_permission_sent_by",
+              },
+              {
+                type: "field",
+                fieldName: "request_permission_letter_numbe",
+                label: "request_permission_letter_numbe",
+              },
+              {
+                type: "field",
+                fieldName: "request_permission_letter_date",
+                label: "request_permission_letter_date",
+              },
+            ],
+          },
+          {
+            type: "group",
+            label: "permission",
+            elements: [
+              {
+                type: "field",
+                fieldName: "permission_number",
+                label: "permission_number",
+              },
+              {
+                type: "field",
+                fieldName: "permission_date",
+                label: "permission_date",
+              },
+            ],
+          },
+          {
+            type: "group",
+            label: "inspection",
+            elements: [
+              {
+                type: "field",
+                fieldName: "request_inspection_sent_by",
+                label: "request_inspection_sent_by",
+              },
+              {
+                type: "field",
+                fieldName: "request_inspection_date",
+                label: "request_inspection_date",
+              },
+              {
+                type: "field",
+                fieldName: "request_inspection_answer_date",
+                label: "request_inspection_answer_date",
+              },
+              {
+                type: "field",
+                fieldName: "inspection_org",
+                label: "inspection_org",
+              },
+            ],
+          },
+        ],
+      });
+
+
+      const map = new Map({
+        basemap: "gray-vector",
+        layers: [featureLayer],
+      });
+
+      const view = new MapView({
+        container: "viewDiv",
+        map,
+        center: [31.20127, 49.12355],
+        zoom: 4,
+        popupEnabled: false,
+      });
+
+      const form = new FeatureForm({
+        map: map,
+        container: "form",
+        groupDisplay: "sequential",
+        layer: featureLayer,
+      });
+
+      // Create bulk edit form
+      bulkEditForm = new FeatureForm({
+        map: map,
+        container: "bulkEditForm",
+        groupDisplay: "sequential",
+        layer: featureLayer,
+        formTemplate: bulkEditFormTemplate,
+      });
+
+      const featureTable = new FeatureTable({
+          view: view,
+          layer: featureLayer,
+          multiSortEnabled: true,
+          attachmentsEnabled: false,
+          editingEnabled: true,
+          paginationEnabled: true,
+          selectionEnabled: true, // Enable row selection
+
+tableTemplate: {
+            // autocast to TableTemplate
+            columnTemplates: [
+              // takes an array of GroupColumnTemplate and FieldColumnTemplate
+              {
+                // autocast to GroupColumnTemplate
+                type: "group",
+                label: "Task main information",
+                columnTemplates: [
+                  {
+                    type: "field",
+                    fieldName: "task_code",
+                    label: "Task code",
+                    editable: false, // read only
+                  },
+                  {
+                    type: "field",
+                    fieldName: "task_name",
+                    label: "Task name",
+                    editable: false, // read only
+                  },
+                  {
+                    type: "field",
+                    fieldName: "task_status",
+                    label: "Task status",
+                    editable: false, // read only
+                  },
+                  {
+                    type: "field",
+                    fieldName: "survey_date",
+                    label: "survey_date",
+                    editable: false, // read only
+                  },
+                  {
+                    type: "field",
+                    fieldName: "area_surveyed",
+                    label: "Area surveyed",
+                    editable: false, // read only
+                  },
+                  ],
+              },
+              {
+                type: "group",
+                label: "Location",
+                columnTemplates: [
+                  {
+                    type: "field",
+                    fieldName: "oblast",
+                    label: "oblast",
+                    editable: false, // read only
+                  },
+                  {
+                    type: "field",
+                    fieldName: "rayon",
+                    label: "rayon",
+                    editable: false, // read only
+                  },
+                  {
+                    type: "field",
+                    fieldName: "council",
+                    label: "council",
+                    editable: false, // read only
+                  },
+                  {
+                    type: "field",
+                    fieldName: "settlement",
+                    label: "settlement",
+                    editable: false, // read only
+                  },
+                ],
+              },
+              {
+                type: "group",
+                label: "Task Clearance Plan",
+                columnTemplates: [
+                  {
+                    type: "field",
+                    fieldName: "tcp_ready",
+                    label: "tcp ready",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "tcp_sent",
+                    label: "tcp sent",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "tcp_sent_by",
+                    label: "tcp_sent_by",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "tcp_sent_date",
+                    label: "tcp sent date",
+                  },
+                ],
+              },
+              {
+                type: "group",
+                label: "Request for permission",
+                columnTemplates: [
+                  {
+                    type: "field",
+                    fieldName: "request_for_permission",
+                    label: "request_for_permission",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "request_permission_sent_by",
+                    label: "request_permission_sent_by",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "request_permission_letter_numbe",
+                    label: "request permission letter number",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "request_permission_letter_date",
+                    label: "request_permission_letter_date",
+                  },
+                ],
+              },
+              {
+                type: "group",
+                label: "Permission",
+                columnTemplates: [
+                  {
+                    type: "field",
+                    fieldName: "permission_number",
+                    label: "permission_number",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "permission_date",
+                    label: "permission_date",
+                  },
+                ],
+              },
+              {
+                type: "group",
+                label: "Inspection",
+                columnTemplates: [
+                  {
+                    type: "field",
+                    fieldName: "request_inspection_sent_by",
+                    label: "request_inspection_sent_by",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "request_inspection_date",
+                    label: "request_inspection_date",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "request_inspection_answer_date",
+                    label: "request_inspection_answer_date",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "inspection_org",
+                    label: "inspection_org",
+                  },
+                ],
+              },
+            ],
+          },
+
+          container: document.getElementById("tableDiv"),
+        });
+
+      // Log when table is ready
+      featureTable.when(() => {
+        console.log("FeatureTable is ready");
+        console.log("Initial highlightIds:", featureTable.highlightIds);
+        console.log("Selection enabled:", featureTable.selectionEnabled);
+        
+        // Check initial selection
+        if (featureTable.highlightIds && featureTable.highlightIds.length > 0) {
+          console.log("Initial selection detected:", featureTable.highlightIds.length);
+          handleSelectionChange(featureTable.highlightIds);
+        }
+      });
+
+      // Function to handle selection changes
+      function handleSelectionChange(highlightIds) {
+        console.log("=== handleSelectionChange called ===");
+        console.log("highlightIds:", highlightIds);
+        console.log("highlightIds length:", highlightIds ? highlightIds.length : 0);
+        
+        if (!highlightIds || highlightIds.length === 0) {
+          console.log("No selection or empty selection");
+          selectedFeatures = [];
+          hideBulkEditPanel();
+          return;
+        }
+        
+        // Get all selected objectIds
+        let selectedObjectIds;
+        try {
+          if (highlightIds.toArray) {
+            selectedObjectIds = highlightIds.toArray();
+          } else if (Array.isArray(highlightIds)) {
+            selectedObjectIds = highlightIds;
+          } else {
+            selectedObjectIds = Array.from(highlightIds);
+          }
+          console.log("Selected objectIds array:", selectedObjectIds);
+        } catch (e) {
+          console.error("Error converting highlightIds to array:", e);
+          return;
+        }
+        
+        console.log("Querying features with objectIds:", selectedObjectIds);
+        
+        // Query features for selected objectIds
+        featureLayer.queryFeatures({
+          objectIds: selectedObjectIds,
+          outFields: ["*"],
+          returnGeometry: false
+        }).then((results) => {
+          console.log("Query results:", results);
+          console.log("Number of features returned:", results.features.length);
+          
+          selectedFeatures = results.features.map(f => {
+            const oid = f.attributes.OBJECTID || f.attributes.objectid || f.attributes.FID || f.getObjectId();
+            return {
+              objectId: oid,
+              feature: f
+            };
+          });
+          
+          console.log("Currently selected features:", selectedFeatures.length);
+          console.log("Selected features array:", selectedFeatures);
+          
+          // Show bulk edit panel for any selection (1 or more)
+          if (selectedFeatures.length >= 1) {
+            console.log("Showing bulk edit panel for", selectedFeatures.length, "feature(s)");
+            showBulkEditPanel();
+          } else {
+            console.log("No features selected");
+            hideBulkEditPanel();
+          }
+        }).catch(error => {
+          console.error("Error querying selected features:", error);
+        });
+      }
+
+      // Watch for changes using reactiveUtils.watch
+      reactiveUtils.watch(
+        () => featureTable.highlightIds?.length,
+        (length) => {
+          console.log("=== highlightIds.length changed to:", length);
+          handleSelectionChange(featureTable.highlightIds);
+        }
+      );
+
+      // Also try listening to the Collection's change event
+      if (featureTable.highlightIds) {
+        featureTable.highlightIds.on("change", (event) => {
+          console.log("=== highlightIds collection changed ===");
+          console.log("Event:", event);
+          handleSelectionChange(featureTable.highlightIds);
+        });
+      }
+
+      // Function to show bulk edit panel
+      function showBulkEditPanel() {
+        console.log("showBulkEditPanel called");
+        const rightPanel = document.getElementById("rightPanel");
+        const selectedCountDiv = document.getElementById("selectedCount");
+        const panelTitle = document.getElementById("bulkEditTitle");
+        
+        console.log("rightPanel element:", rightPanel);
+        console.log("selectedCountDiv element:", selectedCountDiv);
+        
+        // Update title and count based on selection
+        if (selectedFeatures.length === 1) {
+          panelTitle.textContent = "Редагування";
+          selectedCountDiv.textContent = `Вибрано об'єкт: ${selectedFeatures[0].objectId}`;
+        } else {
+          panelTitle.textContent = "Масове редагування";
+          selectedCountDiv.textContent = `Вибрано об'єктів: ${selectedFeatures.length}`;
+        }
+        
+        rightPanel.classList.add("visible");
+        
+        console.log("Panel classes after add:", rightPanel.className);
+        
+        // Create a proper graphic object for the form
+        // Use the first selected feature as a template but clear its attributes
+        if (selectedFeatures.length > 0 && selectedFeatures[0].feature) {
+          const templateFeature = selectedFeatures[0].feature.clone();
+          // Clear all attribute values to make it a blank template
+          Object.keys(templateFeature.attributes).forEach(key => {
+            templateFeature.attributes[key] = null;
+          });
+          bulkEditForm.feature = templateFeature;
+        } else {
+          // If no features available, set to null
+          bulkEditForm.feature = null;
+        }
+        
+        console.log("Bulk edit form feature set");
+      }
+
+      // Function to hide bulk edit panel
+      function hideBulkEditPanel() {
+        const rightPanel = document.getElementById("rightPanel");
+        rightPanel.classList.remove("visible");
+        bulkEditForm.feature = null;
+      }
+
+      // Function to apply bulk edits
+      async function applyBulkEdits() {
+        if (selectedFeatures.length === 0) return;
+
+        // Get values from bulk edit form
+        const updatedValues = bulkEditForm.getValues();
+        
+        // Filter only fields that have been changed (not null/undefined)
+        const fieldsToUpdate = {};
+        Object.keys(updatedValues).forEach(fieldName => {
+          const value = updatedValues[fieldName];
+          if (value !== null && value !== undefined && value !== '') {
+            fieldsToUpdate[fieldName] = value;
+          }
+        });
+
+        // If no fields were changed, return
+        if (Object.keys(fieldsToUpdate).length === 0) {
+          showToast('warning', 'Увага', 'Будь ласка, заповніть хоча б одне поле для оновлення');
+          return;
+        }
+
+        // Query full features for selected objectIds
+        const objectIds = selectedFeatures.map(f => f.objectId);
+        
+        try {
+          const queryResult = await featureLayer.queryFeatures({
+            objectIds: objectIds,
+            outFields: ["*"],
+            returnGeometry: true
+          });
+
+          // Update attributes for all selected features
+          const featuresToUpdate = queryResult.features.map(feature => {
+            Object.keys(fieldsToUpdate).forEach(fieldName => {
+              feature.attributes[fieldName] = fieldsToUpdate[fieldName];
+            });
+            return feature;
+          });
+
+          // Apply edits
+          document.getElementById("btnBulkUpdate").disabled = true;
+          document.getElementById("btnBulkUpdate").textContent = "Оновлення...";
+
+          const edits = {
+            updateFeatures: featuresToUpdate
+          };
+
+          const result = await featureLayer.applyEdits(edits);
+          
+          if (result.updateFeatureResults.length > 0) {
+            const successCount = result.updateFeatureResults.filter(r => !r.error).length;
+            const errorCount = result.updateFeatureResults.filter(r => r.error).length;
+            
+            if (errorCount > 0) {
+              showToast('warning', 'Часткове оновлення', 'Оновлено: ' + successCount + ' об\'єктів. Помилок: ' + errorCount);
+            } else {
+              if (successCount === 1) {
+                showToast('success', 'Виконано', 'Успішно оновлено об\'єкт');
+              } else {
+                showToast('success', 'Виконано', 'Успішно оновлено ' + successCount + ' об\'єктів');
+              }
+            }
+            
+            // Clear selection and refresh table
+            featureTable.clearSelectionFilter();
+            featureTable.refresh();
+            selectedFeatures = [];
+            hideBulkEditPanel();
+          }
+
+          document.getElementById("btnBulkUpdate").disabled = false;
+          document.getElementById("btnBulkUpdate").textContent = "Застосувати зміни";
+
+        } catch (error) {
+          console.error("Bulk edit error:", error);
+          showToast('error', 'Помилка', 'Помилка при масовому редагуванні: ' + error.message);
+          document.getElementById("btnBulkUpdate").disabled = false;
+          document.getElementById("btnBulkUpdate").textContent = "Застосувати зміни";
+        }
+      }
+
+      // Cancel bulk edit
+      function cancelBulkEdit() {
+        featureTable.clearSelectionFilter();
+        selectedFeatures = [];
+        hideBulkEditPanel();
+      }
+
+      // Bulk edit button handlers - must be defined before using
+      document.getElementById("btnBulkUpdate").addEventListener('click', () => {
+        applyBulkEdits();
+      });
+
+      document.getElementById("btnCancelBulk").addEventListener('click', () => {
+        cancelBulkEdit();
+      });
+
+      document.getElementById("closeBulkEdit").addEventListener('click', () => {
+        cancelBulkEdit();
+      });
+
+      // Function to populate a specific filter based on parent filters
+      async function populateFilter(fieldName, parentFilters = {}) {
+        const query = featureLayer.createQuery();
+        
+        // Build where clause based on parent filters
+        const conditions = [];
+        Object.keys(parentFilters).forEach(field => {
+          if (parentFilters[field]) {
+            const value = parentFilters[field].replace(/'/g, "''");
+            conditions.push(`${field} = '${value}'`);
+          }
+        });
+        query.where = conditions.length > 0 ? conditions.join(' AND ') : '1=1';
+        
+        query.returnDistinctValues = true;
+        query.outFields = [fieldName];
+        query.orderByFields = [fieldName];
+        
+        try {
+          const results = await featureLayer.queryFeatures(query);
+          const select = document.getElementById(fieldName + 'Filter');
+          
+          // Store current value
+          const currentValue = select.value;
+          
+          // Clear existing options except the first one
+          select.innerHTML = '<option value="">Всі</option>';
+          
+          // Add unique values
+          const values = new Set();
+          results.features.forEach(feature => {
+            const value = feature.attributes[fieldName];
+            if (value !== null && value !== undefined && value !== '') {
+              values.add(value);
+            }
+          });
+          
+          // Sort and add to select
+          let valueStillExists = false;
+          Array.from(values).sort().forEach(value => {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = value;
+            select.appendChild(option);
+            
+            if (value === currentValue) {
+              valueStillExists = true;
+            }
+          });
+          
+          // Restore value if it still exists
+          if (valueStillExists) {
+            select.value = currentValue;
+          } else if (currentValue) {
+            // If previous value no longer exists, clear it
+            currentFilters[fieldName] = null;
+          }
+          
+        } catch (error) {
+          console.error(`Error populating ${fieldName} filter:`, error);
+        }
+      }
+
+      // Function to populate all filters with cascading logic
+      async function populateAllFilters() {
+        // Populate oblast (no dependencies)
+        await populateFilter('oblast');
+        
+        // Populate rayon (depends on oblast)
+        await populateFilter('rayon', { 
+          oblast: currentFilters.oblast 
+        });
+        
+        // Populate council (depends on oblast and rayon)
+        await populateFilter('council', { 
+          oblast: currentFilters.oblast,
+          rayon: currentFilters.rayon
+        });
+        
+        // Populate settlement (depends on oblast, rayon, and council)
+        await populateFilter('settlement', { 
+          oblast: currentFilters.oblast,
+          rayon: currentFilters.rayon,
+          council: currentFilters.council
+        });
+      }
+
+      // Function to build filter expression
+      function buildFilterExpression() {
+        const conditions = [];
+        
+        Object.keys(currentFilters).forEach(field => {
+          if (currentFilters[field]) {
+            // Escape single quotes in values
+            const value = currentFilters[field].replace(/'/g, "''");
+            conditions.push(`${field} = '${value}'`);
+          }
+        });
+        
+        return conditions.length > 0 ? conditions.join(' AND ') : '1=1';
+      }
+
+      // Function to apply filters
+      function applyFilters() {
+        const filterExpression = buildFilterExpression();
+        
+        // Update feature layer definition expression
+        featureLayer.definitionExpression = filterExpression;
+        
+        // Refresh the feature table
+        featureTable.filterGeometry = null;
+        featureTable.refresh();
+      }
+
+      // Setup filter change listeners with cascading updates
+      document.getElementById('oblastFilter').addEventListener('change', async (e) => {
+        currentFilters.oblast = e.target.value || null;
+        
+        // Reset dependent filters
+        if (!currentFilters.oblast) {
+          currentFilters.rayon = null;
+          currentFilters.council = null;
+          currentFilters.settlement = null;
+          document.getElementById('rayonFilter').value = '';
+          document.getElementById('councilFilter').value = '';
+          document.getElementById('settlementFilter').value = '';
+        }
+        
+        // Repopulate dependent dropdowns
+        await populateFilter('rayon', { oblast: currentFilters.oblast });
+        await populateFilter('council', { 
+          oblast: currentFilters.oblast,
+          rayon: currentFilters.rayon
+        });
+        await populateFilter('settlement', { 
+          oblast: currentFilters.oblast,
+          rayon: currentFilters.rayon,
+          council: currentFilters.council
+        });
+        
+        applyFilters();
+      });
+
+      document.getElementById('rayonFilter').addEventListener('change', async (e) => {
+        currentFilters.rayon = e.target.value || null;
+        
+        // Reset dependent filters
+        if (!currentFilters.rayon) {
+          currentFilters.council = null;
+          currentFilters.settlement = null;
+          document.getElementById('councilFilter').value = '';
+          document.getElementById('settlementFilter').value = '';
+        }
+        
+        // Repopulate dependent dropdowns
+        await populateFilter('council', { 
+          oblast: currentFilters.oblast,
+          rayon: currentFilters.rayon
+        });
+        await populateFilter('settlement', { 
+          oblast: currentFilters.oblast,
+          rayon: currentFilters.rayon,
+          council: currentFilters.council
+        });
+        
+        applyFilters();
+      });
+
+      document.getElementById('councilFilter').addEventListener('change', async (e) => {
+        currentFilters.council = e.target.value || null;
+        
+        // Reset dependent filters
+        if (!currentFilters.council) {
+          currentFilters.settlement = null;
+          document.getElementById('settlementFilter').value = '';
+        }
+        
+        // Repopulate dependent dropdowns
+        await populateFilter('settlement', { 
+          oblast: currentFilters.oblast,
+          rayon: currentFilters.rayon,
+          council: currentFilters.council
+        });
+        
+        applyFilters();
+      });
+
+      document.getElementById('settlementFilter').addEventListener('change', (e) => {
+        currentFilters.settlement = e.target.value || null;
+        applyFilters();
+      });
+
+      // Clear all filters
+      document.getElementById('clearFilters').addEventListener('click', async () => {
+        document.getElementById('oblastFilter').value = '';
+        document.getElementById('rayonFilter').value = '';
+        document.getElementById('councilFilter').value = '';
+        document.getElementById('settlementFilter').value = '';
+        
+        currentFilters = {
+          oblast: null,
+          rayon: null,
+          council: null,
+          settlement: null
+        };
+        
+        // Repopulate all filters without restrictions
+        await populateAllFilters();
+        
+        applyFilters();
+      });
+
+      // Initialize filters when layer is loaded
+      featureLayer.when(() => {
+        populateAllFilters();
+      });
+
+      view.on("click", (event) => {
+        unselectFeature();
+        view.hitTest(event).then((response) => {
+          const results = response.results;
+          if (
+            results.length > 0 &&
+            results[0].graphic &&
+            results[0].graphic.layer === featureLayer
+          ) {
+            selectFeature(response.results[0].graphic.getObjectId());
+          } else {
+            document.getElementById("update").classList.add("esri-hidden");
+          }
+        });
+      });
+
+      function unselectFeature() {
+        if (highlight) {
+          highlight.remove();
+        }
+      }
+
+      function selectFeature(objectId) {
+        featureLayer
+          .queryFeatures({
+            objectIds: [objectId],
+            outFields: ["*"],
+            returnGeometry: true,
+          })
+          .then((results) => {
+            if (results.features.length > 0) {
+              editFeature = results.features[0];
+              form.feature = editFeature;
+
+              view.whenLayerView(editFeature.layer).then((layerView) => {
+                highlight = layerView.highlight(editFeature);
+              });
+
+              if (document.getElementById("update").classList.contains("esri-hidden")) {
+                document.getElementById("update").classList.remove("esri-hidden");
+              }
+            }
+          });
+      }
+
+      form.on("submit", () => {
+        if (editFeature) {
+          const updated = form.getValues();
+
+          Object.keys(updated).forEach((name) => {
+            editFeature.attributes[name] = updated[name];
+          });
+
+          const edits = {
+            updateFeatures: [editFeature],
+          };
+          applyAttributeUpdates(edits);
+        }
+      });
+
+      function applyAttributeUpdates(params) {
+        document.getElementById("btnUpdate").style.cursor = "progress";
+        featureLayer
+          .applyEdits(params)
+          .then((editsResult) => {
+            if (editsResult.addFeatureResults.length > 0) {
+              const objectId = editsResult.addFeatureResults[0].objectId;
+              selectFeature(objectId);
+            }
+            document.getElementById("btnUpdate").style.cursor = "pointer";
+          })
+          .catch((error) => {
+            console.log("===============================================");
+            console.error("[ applyEdits ] FAILURE: ", error.code, error.name, error.message);
+            console.log("error = ", error);
+            document.getElementById("btnUpdate").style.cursor = "pointer";
+          });
+      }
+
+      const btnUpdate = document.getElementById("btnUpdate");
+      if (btnUpdate) {
+        btnUpdate.onclick = () => {
+          form.submit();
+        };
+      }
+
+      const updateElement = document.getElementById("update");
+      if (updateElement) {
+        view.ui.add("update", "top-right");
+      }
+
+      // Initialize resizers after everything is loaded
+      initializeResizers();
+
+      // Toast notification functions
+      function showToast(type, title, message) {
+        const overlay = document.getElementById('toastOverlay');
+        const toastMessage = document.getElementById('toastMessage');
+        const icon = document.getElementById('toastIcon');
+        const titleEl = document.getElementById('toastTitle');
+        const textEl = document.getElementById('toastText');
+        
+        // Reset classes
+        toastMessage.className = 'toast-message ' + type;
+        
+        // Set icon based on type
+        if (type === 'success') {
+          icon.textContent = '✓';
+        } else if (type === 'error') {
+          icon.textContent = '✕';
+        } else if (type === 'warning') {
+          icon.textContent = '⚠';
+        }
+        
+        titleEl.textContent = title;
+        textEl.textContent = message;
+        
+        overlay.classList.add('show');
+      }
+
+      function hideToast() {
+        document.getElementById('toastOverlay').classList.remove('show');
+      }
+
+      document.getElementById('toastButton').onclick = hideToast;
+      document.getElementById('toastOverlay').onclick = (e) => {
+        if (e.target.id === 'toastOverlay') {
+          hideToast();
+        }
+      };
+
+      // Initialize resizer functionality after DOM is ready
+      function initializeResizers() {
+        console.log('initializeResizers() called');
+        
+        const resizerH = document.querySelector(".resizer-horizontal");
+        const resizerV = document.querySelector(".resizer-vertical");
+        const viewDiv = document.getElementById("viewDiv");
+        const rightPanel = document.getElementById("rightPanel");
+        const body = document.body;
+
+        console.log('Resizer elements found:', {
+          resizerH,
+          resizerV,
+          viewDiv,
+          rightPanel
+        });
+
+        if (!resizerH || !resizerV) {
+          console.error('Resizer elements not found!');
+          return;
+        }
+
+        // Горизонтальний (Карта / Таблиця)
+        resizerH.addEventListener("mousedown", (e) => {
+          console.log('Horizontal resizer mousedown triggered');
+          e.preventDefault();
+          body.classList.add("is-resizing");
+          body.style.cursor = "ns-resize";
+
+          const startY = e.clientY;
+          const startHeight = viewDiv.offsetHeight;
+
+          const onMouseMove = (moveEvent) => {
+            const delta = moveEvent.clientY - startY;
+            const newHeight = startHeight + delta;
+            if (newHeight > 100 && newHeight < window.innerHeight - 200) {
+              viewDiv.style.height = newHeight + "px";
+              
+              // Notify ArcGIS MapView that container size changed
+              if (view && typeof view.resize === 'function') {
+                view.container.style.height = newHeight + 'px';
+                setTimeout(() => {
+                  if (view && typeof view.resize === 'function') {
+                    view.resize();
+                  }
+                }, 0);
+              }
+            }
+          };
+
+          const onMouseUp = () => {
+            console.log('Horizontal resize mouse up');
+            body.classList.remove("is-resizing");
+            body.style.cursor = "";
+            window.removeEventListener("mousemove", onMouseMove);
+            window.removeEventListener("mouseup", onMouseUp);
+            
+            // Final resize call after mouse up
+            if (view && typeof view.resize === 'function') {
+              setTimeout(() => {
+                view.resize();
+              }, 100);
+            }
+          };
+
+          window.addEventListener("mousemove", onMouseMove);
+          window.addEventListener("mouseup", onMouseUp);
+        });
+
+        console.log('Resizer event listeners attached successfully');
+
+        // Add simple test clicks
+        resizerH.addEventListener('click', () => {
+          console.log('Horizontal resizer clicked!');
+        });
+        
+        resizerV.addEventListener('click', () => {
+          console.log('Vertical resizer clicked!');
+        });
+      }
+
+    </script>
+  </head>
+
+  <body>
+    <div class="main-container">
+      <!-- Left panel with map and table -->
+      <div class="left-panel">
+        <div id="viewDiv"></div>
+        <div class="resizer-horizontal"></div>
+        <div class="table-container">
+          <div id="filterContainer">
+            <div class="filter-group">
+              <label for="oblastFilter">Область:</label>
+              <select id="oblastFilter">
+                <option value="">Всі</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="rayonFilter">Район:</label>
+              <select id="rayonFilter">
+                <option value="">Всі</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="councilFilter">Рада:</label>
+              <select id="councilFilter">
+                <option value="">Всі</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="settlementFilter">Населений пункт:</label>
+              <select id="settlementFilter">
+                <option value="">Всі</option>
+              </select>
+            </div>
+            <button id="clearFilters">Очистити фільтри</button>
+          </div>
+          <div id="tableDiv"></div>
+        </div>
+      </div>
+      <!-- Right panel with editor (hidden by default) -->
+      <div class="right-panel" id="rightPanel">
+        <div class="resizer-vertical"></div>
+        <div id="bulkEdit">
+          <div id="bulkEditHeader">
+            <h3 id="bulkEditTitle">Редагування</h3>
+            <button id="closeBulkEdit">&times;</button>
+          </div>
+          <div id="selectedCount"></div>
+          <div id="bulkEditContent">
+            <div id="bulkEditForm" class="scroller esri-component"></div>
+          </div>
+          <div id="bulkEditActions">
+            <button id="btnCancelBulk">Скасувати</button>
+            <button id="btnBulkUpdate">Застосувати зміни</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div class="toast-overlay" id="toastOverlay">
+      <div class="toast-message" id="toastMessage">
+        <div class="toast-icon" id="toastIcon">✓</div>
+        <div class="toast-title" id="toastTitle">Успіх</div>
+        <div class="toast-text" id="toastText"></div>
+        <button class="toast-button" id="toastButton">OK</button>
+      </div>
+    </div>
+  </body>
+</html>
