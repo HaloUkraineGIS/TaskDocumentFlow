@@ -385,7 +385,7 @@
     </style>
 
 <script type="module">
-    const [Map, MapView, FeatureLayer, FeatureTable, FeatureForm, FormTemplate, reactiveUtils] = await $arcgis.import([
+    const [Map, MapView, FeatureLayer, FeatureTable, FeatureForm, FormTemplate, reactiveUtils, OAuthInfo, esriId] = await $arcgis.import([
       "@arcgis/core/Map.js",
       "@arcgis/core/views/MapView.js",
       "@arcgis/core/layers/FeatureLayer.js",
@@ -393,7 +393,29 @@
       "@arcgis/core/widgets/FeatureForm.js",
       "@arcgis/core/form/FormTemplate.js",
       "@arcgis/core/core/reactiveUtils.js",
+      "@arcgis/core/identity/OAuthInfo.js",
+      "@arcgis/core/identity/IdentityManager.js",
     ]);
+
+    // ── OAuth 2.0 + SSO ──────────────────────────────────────────────────────
+    const PORTAL_URL = "https://gis.htgoims.org/portal";
+    const REDIRECT_URI = "https://haloukrainegis.github.io/TaskDocumentFlow";
+
+    const oauthInfo = new OAuthInfo({
+      appId: "B20ugK5LdiIAs3Px",
+      portalUrl: PORTAL_URL,
+      flowType: "authorization-code", // потрібно для SSO/SAML порталів
+      popup: false,
+      redirectUri: REDIRECT_URI,      // явно вказуємо — має точно збігатись з registered URI
+    });
+    esriId.registerOAuthInfos([oauthInfo]);
+
+    try {
+      await esriId.checkSignInStatus(`${PORTAL_URL}/sharing`);
+    } catch {
+      await esriId.getCredential(`${PORTAL_URL}/sharing`);
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     let highlight, editFeature;
     let currentFilters = {
