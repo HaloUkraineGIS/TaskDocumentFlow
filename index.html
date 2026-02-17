@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="en">
+<html lang="uk">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
 
-    <title>Documents | ArcGIS Maps SDK for JavaScript</title>
+    <title>Документообіг по ділянках</title>
 
     <link rel="stylesheet" href="https://js.arcgis.com/4.34/esri/themes/light/main.css" />
     <script src="https://js.arcgis.com/4.34/"></script>
@@ -12,9 +12,12 @@
     <style>
       html,
       body {
-        height: 100%;
+        height: 111.11%;
         margin: 0;
         overflow: hidden;
+        transform: scale(0.9);
+        transform-origin: 0 0; /* Scales from the top-left corner */
+        width: 111.11%;
       }
 
       .main-container {
@@ -76,8 +79,8 @@
       }
 
       #viewDiv {
-        height: 30%;
-        min-height: 150px;
+        height: 0%;
+        min-height: 2px;
         width: 100%;
       }
 
@@ -397,224 +400,310 @@
       oblast: null,
       rayon: null,
       council: null,
-      settlement: null
+      locality: null,
+      task_code: null,
+      task_name: null,
+      status_name: null
     };
     let selectedFeatures = [];
     let bulkEditForm;
 
       const serviceUrl =
-        "https://gis-services.htgoims.org/arcgis/rest/services/ukraine/ukr_document_flow_tasks/FeatureServer/0";
+        "https://gis-services.htgoims.org/arcgis/rest/services/ukraine/ukr_task_document_flow/FeatureServer/0";
       const featureLayer = new FeatureLayer({
         url: serviceUrl,
         title: "Document flow",
-        outFields: ["task_code", "task_name", "task_status", "survey_date", "oblast", "rayon", "council", "settlement", "area_surveyed", "tcp_ready", "tcp_sent", "tcp_sent_by", "tcp_sent_date", "request_for_permission", "request_permission_sent_by", "request_permission_letter_numbe", "request_permission_letter_date", "permission_number", "permission_date", "request_inspection_sent_by", "request_inspection_date", "request_inspection_answer_date", "inspection_org"],
-        formTemplate: {
-          title: "Document flow",
-          elements: [
-            {
-              type: "group",
-              label: "TCP Information",
-              elements: [
-                {
-                  type: "field",
-                  fieldName: "tcp_ready",
-                  label: "tcp ready",
-                },
-                {
-                  type: "field",
-                  fieldName: "tcp_sent",
-                  label: "tcp_sent",
-                },
-                {
-                  type: "field",
-                  fieldName: "tcp_sent_by",
-                  label: "tcp_sent_by",
-                },
-                {
-                  type: "field",
-                  fieldName: "tcp_sent_date",
-                  label: "tcp_sent_date",
-                },
-              ],
-            },
-            {
-              type: "group",
-              label: "Request for permission",
-              elements: [
-                {
-                  type: "field",
-                  fieldName: "request_for_permission",
-                  label: "request_for_permission",
-                },
-                {
-                  type: "field",
-                  fieldName: "request_permission_sent_by",
-                  label: "request_permission_sent_by",
-                },
-                {
-                  type: "field",
-                  fieldName: "request_permission_letter_numbe",
-                  label: "request_permission_letter_numbe",
-                },
-                {
-                  type: "field",
-                  fieldName: "request_permission_letter_date",
-                  label: "request_permission_letter_date",
-                },
-              ],
-            },
-            {
-              type: "group",
-              label: "permission",
-              elements: [
-                {
-                  type: "field",
-                  fieldName: "permission_number",
-                  label: "permission_number",
-                },
-                {
-                  type: "field",
-                  fieldName: "permission_date",
-                  label: "permission_date",
-                },
-              ],
-            },
-            {
-              type: "group",
-              label: "inspection",
-              elements: [
-                {
-                  type: "field",
-                  fieldName: "request_inspection_sent_by",
-                  label: "request_inspection_sent_by",
-                },
-                {
-                  type: "field",
-                  fieldName: "request_inspection_date",
-                  label: "request_inspection_date",
-                },
-                {
-                  type: "field",
-                  fieldName: "request_inspection_answer_date",
-                  label: "request_inspection_answer_date",
-                },
-                {
-                  type: "field",
-                  fieldName: "inspection_org",
-                  label: "inspection_org",
-                },
-              ],
-            },
-          ],
-          expressionInfos: [
-            {
-              name: "alwaysHidden",
-              expression: "1 == 0",
-            },
-          ],
-        },
+        outFields: ["*"]
       });
 
       // Create bulk edit form template (same structure but for bulk editing)
       const bulkEditFormTemplate = new FormTemplate({
-        title: "Групове редагування",
-        description: "Змінити значення для вибраних об'єктів",
+        title: "Редагування",
+        // description: "Змінити значення для вибраних об'єктів",
         elements: [
-          {
-            type: "group",
-            label: "TCP Information",
-            elements: [
-              {
-                type: "field",
-                fieldName: "tcp_ready",
-                label: "tcp ready",
+            {
+                type: "group",
+                label: "План розмінування",
+                collapsed: true, // Keep this group collapsed by default
+                elements: [                  
+                  {
+                    type: "field",
+                    fieldName: "tcp_sent_letter_num",
+                    label: "TCP номер листа надсилання до ЦПМД",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "tcp_sent_letter_date",
+                    label: "TCP дата листа надсилання до ЦПМД",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "tcp_sent_letter_by",
+                    label: "TCP лист надіслано ким",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "tcp_approved",
+                    label: "TCP погоджено?",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "tcp_approved_date",
+                    label: "TCP дата отримання відповіді",                    
+                  },
+                ],
               },
               {
-                type: "field",
-                fieldName: "tcp_sent",
-                label: "tcp_sent",
+                type: "group",
+                label: "Запит на погодження ОВА/ОДА",
+                collapsed: true, // Keep this group collapsed by default
+                elements: [
+                  {
+                    type: "field",
+                    fieldName: "permission_oda_req_num",
+                    label: "Номер запиту на погодження ОВА/ОДА",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "permission_oda_req_date",
+                    label: "Дата запиту на погодження ОВА/ОДА",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "permission_oda_req_sent_by",
+                    label: "Запит на погодження ОВА/ОДА надіслано ким",
+                  },
+                ],
               },
               {
-                type: "field",
-                fieldName: "tcp_sent_by",
-                label: "tcp_sent_by",
+                type: "group",
+                label: "Погодження від ОВА/ОДА",
+                collapsed: true, // Keep this group collapsed by default
+                elements: [
+                  {
+                    type: "field",
+                    fieldName: "permission_oda_ans_num",
+                    label: "Номер листа відповіді від ОВА/ОДА",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "permission_oda_ans_date",
+                    label: "Дата листа відповіді від ОВА/ОДА",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "permission_oda_ans_result",
+                    label: "Результат погодження від ОВА/ОДА",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "permission_oda_ans_comment",
+                    label: "Коментар до відмови ОВА/ОДА",
+                  },
+                ],
               },
               {
-                type: "field",
-                fieldName: "tcp_sent_date",
-                label: "tcp_sent_date",
+                type: "group",
+                label: "Запит на розпорядження ЦПМД",
+                collapsed: true, // Keep this group collapsed by default
+                elements: [
+                  {
+                    type: "field",
+                    fieldName: "permission_nmac_req_num",
+                    label: "Номер запиту на розпорядження ЦПМД",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "permission_nmac_req_date",
+                    label: "Дата запиту на розпорядження ЦПМД",
+                  },                  
+                  {
+                    type: "field",
+                    fieldName: "permission_nmac_req_sent_by",
+                    label: "Запит на розпорядження ЦПМД надіслано ким",
+                  },                  
+                ],
+              },
+              {
+                type: "group",
+                label: "Первинне розпорядження ЦПМД",
+                collapsed: true, // Keep this group collapsed by default
+                elements: [
+                  {
+                    type: "field",
+                    fieldName: "first_permission_nmac_num",
+                    label: "Номер первинного розпорядження ЦПМД",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "first_permission_nmac_date",
+                    label: "Дата первинного розпорядження ЦПМД",
+                  },                  
+                  {
+                    type: "field",
+                    fieldName: "first_permission_nmac_comment",
+                    label: "Коментар щодо невключення до розпорядження ЦПМД",
+                  }, 
+                  {
+                    type: "field",
+                    fieldName: "first_permission_nmac_st_date",
+                    label: "Дата, з якої діє первинне розпорядження",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "first_permission_nmac_en_date",
+                    label: "Дата, до якої діє первинне розпорядження",
+                  },                 
+                ],
+              },
+              {
+                type: "group",
+                label: "Запит на Розпорядження ЦПМД на продовження робіт",
+                collapsed: true, // Keep this group collapsed by default
+                elements: [
+                  {
+                    type: "field",
+                    fieldName: "cont_perm_nmac_req_num",
+                    label: "Номер запиту на Розпорядження на продовження робіт",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "cont_perm_nmac_req_date",
+                    label: "Дата запиту на Розпорядження на продовження робіт",
+                  },                  
+                  {
+                    type: "field",
+                    fieldName: "cont_perm_nmac_req_sent_by",
+                    label: "Запит на Розпорядження на продовження робіт надіслано ким",
+                  },                  
+                ],
+              },
+              {
+                type: "group",
+                label: "Розпорядження ЦПМД на продовження робіт",
+                collapsed: true, // Keep this group collapsed by default
+                elements: [
+                  {
+                    type: "field",
+                    fieldName: "cont_perm_nmac_num",
+                    label: "Номер Розпорядження на продовження робіт",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "cont_perm_nmac_date",
+                    label: "Дата Розпорядження на продовження робіт",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "cont_perm_nmac_st_date",
+                    label: "Дата, з якої діє Розпорядження на продовження робіт",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "cont_perm_nmac_en_date",
+                    label: "Дата, до якої діє Розпорядження на продовження робіт",
+                  },                 
+                ],
+              },
+              {
+                type: "group",
+                label: "Заявка на інспектування",
+                collapsed: true, // Keep this group collapsed by default
+                elements: [
+                  {
+                    type: "field",
+                    fieldName: "inspection_req_num",
+                    label: "Номер Заявки на інспектування",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "inspection_req_date",
+                    label: "Дата Заявки на інспектування",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "inspection_req_sent_by",
+                    label: "Заявка на інспектування надіслана ким",
+                  },             
+                ],
+              },
+              {
+                type: "group",
+                label: "Заявка на визначений орган інспектування",
+                collapsed: true, // Keep this group collapsed by default
+                elements: [
+                  {
+                    type: "field",
+                    fieldName: "inspection_org",
+                    label: "Призначений орган інспектування",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "inspection_req_org_num",
+                    label: "Номер Заявки на визначений орган інспектування",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "inspection_req_org_date",
+                    label: "Дата Заявки на визначений орган інспектування",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "inspection_req_org_sent_by",
+                    label: "Заявка на визначений орган інспектування надіслано ким", 
+                  },             
+                ],
+              },
+              {
+                type: "group",
+                label: "Інспектування",
+                collapsed: true, // Keep this group collapsed by default
+                elements: [
+                  {
+                    type: "field",
+                    fieldName: "inspection_date",
+                    label: "Дата інспектування",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "inspection_act_num",
+                    label: "Номер акту інспектування",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "inspection_act_date",
+                    label: "Дата акту інспектування",
+                  },                           
+                ],
+              },
+              {
+                type: "group",
+                label: "Сертифікат та Гарантійний лист",
+                collapsed: true, // Keep this group collapsed by default
+                elements: [
+                  {
+                    type: "field",
+                    fieldName: "certificate_num",
+                    label: "Номер сертифікату",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "certificate_date",
+                    label: "Дата сертифікату",
+                  },  
+                  {
+                    type: "field",
+                    fieldName: "warrant_letter_num",
+                    label: "Номер гарантійного листа",
+                  },
+                  {
+                    type: "field",
+                    fieldName: "warrant_letter_date",
+                    label: "Дата гарантійного листа",
+                  },                          
+                ],
               },
             ],
-          },
-          {
-            type: "group",
-            label: "Request for permission",
-            elements: [
-              {
-                type: "field",
-                fieldName: "request_for_permission",
-                label: "request_for_permission",
-              },
-              {
-                type: "field",
-                fieldName: "request_permission_sent_by",
-                label: "request_permission_sent_by",
-              },
-              {
-                type: "field",
-                fieldName: "request_permission_letter_numbe",
-                label: "request_permission_letter_numbe",
-              },
-              {
-                type: "field",
-                fieldName: "request_permission_letter_date",
-                label: "request_permission_letter_date",
-              },
-            ],
-          },
-          {
-            type: "group",
-            label: "permission",
-            elements: [
-              {
-                type: "field",
-                fieldName: "permission_number",
-                label: "permission_number",
-              },
-              {
-                type: "field",
-                fieldName: "permission_date",
-                label: "permission_date",
-              },
-            ],
-          },
-          {
-            type: "group",
-            label: "inspection",
-            elements: [
-              {
-                type: "field",
-                fieldName: "request_inspection_sent_by",
-                label: "request_inspection_sent_by",
-              },
-              {
-                type: "field",
-                fieldName: "request_inspection_date",
-                label: "request_inspection_date",
-              },
-              {
-                type: "field",
-                fieldName: "request_inspection_answer_date",
-                label: "request_inspection_answer_date",
-              },
-              {
-                type: "field",
-                fieldName: "inspection_org",
-                label: "inspection_org",
-              },
-            ],
-          },
-        ],
       });
 
 
@@ -642,9 +731,9 @@
       bulkEditForm = new FeatureForm({
         map: map,
         container: "bulkEditForm",
-        groupDisplay: "sequential",
         layer: featureLayer,
         formTemplate: bulkEditFormTemplate,
+        groupDisplay: "sequential"
       });
 
       const featureTable = new FeatureTable({
@@ -655,170 +744,579 @@
           editingEnabled: true,
           paginationEnabled: true,
           selectionEnabled: true, // Enable row selection
-
-tableTemplate: {
+          tableTemplate: {
             // autocast to TableTemplate
             columnTemplates: [
-              // takes an array of GroupColumnTemplate and FieldColumnTemplate
+              // Frozen column at top level (outside groups)
+              {
+                type: "field",
+                fieldName: "task_code",
+                label: "Таск код",
+                editable: false, // read only
+                autoWidth: true,
+                frozen: true                    
+              },
+              // takes an array of GroupColumnTemplate and FieldColumnTemplate              
               {
                 // autocast to GroupColumnTemplate
                 type: "group",
-                label: "Task main information",
+                label: "Загальна інформація",
                 columnTemplates: [
                   {
                     type: "field",
-                    fieldName: "task_code",
-                    label: "Task code",
-                    editable: false, // read only
-                  },
-                  {
-                    type: "field",
                     fieldName: "task_name",
-                    label: "Task name",
+                    label: "Назва таски",
                     editable: false, // read only
+                    autoWidth: true
                   },
                   {
                     type: "field",
-                    fieldName: "task_status",
-                    label: "Task status",
+                    fieldName: "imsma_hazard_code",
+                    label: "IMSMA ID",
                     editable: false, // read only
+                    autoWidth: true
                   },
                   {
                     type: "field",
-                    fieldName: "survey_date",
-                    label: "survey_date",
+                    fieldName: "organisation_name",
+                    label: "Оператор",
                     editable: false, // read only
+                    autoWidth: true
                   },
                   {
                     type: "field",
-                    fieldName: "area_surveyed",
-                    label: "Area surveyed",
+                    fieldName: "status_name",
+                    label: "Статус",
                     editable: false, // read only
+                    autoWidth: true
                   },
+                  {
+                    type: "field",
+                    fieldName: "area_sqm",
+                    label: "Площа",
+                    editable: false, // read only
+                    autoWidth: true
+                  },
+                  {
+                    type: "field",
+                    fieldName: "identified_date",
+                    label: "Дата обстеження",
+                    editable: false, // read only
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    }
+                  },   
+                  {
+                    type: "field",
+                    fieldName: "goims_link",
+                    label: "GOIMS",
+                    editable: false, // read only
+                    autoWidth: true
+                  },
+                  {
+                    type: "field",
+                    fieldName: "opsmap_link",
+                    label: "Opsmap",
+                    editable: false, // read only
+                    autoWidth: true
+                  },  
+                  {
+                    type: "field",
+                    fieldName: "start_date",
+                    label: "Дата початку робіт",
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    },
+                    editable: false, // read only
+                    autoWidth: true
+                  },
+                  {
+                    type: "field",
+                    fieldName: "end_date",
+                    label: "Дата закінчення робіт",
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    },
+                    editable: false, // read only
+                    autoWidth: true
+                  },
+                  {
+                    type: "field",
+                    fieldName: "exist_in_pr_plan",
+                    label: "Наявність в плані гуманітарного розмінування",
+                    editable: true,
+                    // autoWidth: true
+                  },             
                   ],
               },
               {
                 type: "group",
-                label: "Location",
+                label: "Місцерозташування",
                 columnTemplates: [
                   {
                     type: "field",
                     fieldName: "oblast",
-                    label: "oblast",
+                    label: "Область",
                     editable: false, // read only
+                    autoWidth: true
                   },
                   {
                     type: "field",
                     fieldName: "rayon",
-                    label: "rayon",
+                    label: "Район",
                     editable: false, // read only
+                    autoWidth: true
                   },
                   {
                     type: "field",
                     fieldName: "council",
-                    label: "council",
+                    label: "Громада",
                     editable: false, // read only
+                    autoWidth: true
                   },
                   {
                     type: "field",
-                    fieldName: "settlement",
-                    label: "settlement",
+                    fieldName: "locality",
+                    label: "Населений пункт",
                     editable: false, // read only
+                    autoWidth: true
+                  },
+                ],
+              },                  
+              {
+                type: "group",
+                label: "План розмінування",
+                columnTemplates: [                  
+                  {
+                    type: "field",
+                    fieldName: "tcp_sent_letter_num",
+                    label: "TCP номер листа надсилання до ЦПМД",
+                    editable: true,
+                    // autoWidth: true
+                  },
+                  {
+                    type: "field",
+                    fieldName: "tcp_sent_letter_date",
+                    label: "TCP дата листа надсилання до ЦПМД",
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    },
+                    editable: true,
+                    // autoWidth: true
+                  },
+                  {
+                    type: "field",
+                    fieldName: "tcp_sent_letter_by",
+                    label: "TCP лист надіслано ким",
+                    editable: true,
+                    // autoWidth: true
+                  },
+                  {
+                    type: "field",
+                    fieldName: "tcp_approved",
+                    label: "TCP погоджено?",
+                    editable: true,
+                    // autoWidth: true
+                  },
+                  {
+                    type: "field",
+                    fieldName: "tcp_approved_date",
+                    label: "TCP дата отримання відповіді",
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    },
+                    editable: true,
+                    // autoWidth: true
                   },
                 ],
               },
               {
                 type: "group",
-                label: "Task Clearance Plan",
+                label: "Запит на погодження ОВА/ОДА",
                 columnTemplates: [
                   {
                     type: "field",
-                    fieldName: "tcp_ready",
-                    label: "tcp ready",
+                    fieldName: "permission_oda_req_num",
+                    label: "Номер запиту на погодження ОВА/ОДА",
+                    editable: true,
+                    // autoWidth: true
                   },
                   {
                     type: "field",
-                    fieldName: "tcp_sent",
-                    label: "tcp sent",
+                    fieldName: "permission_oda_req_date",
+                    label: "Дата запиту на погодження ОВА/ОДА",
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    },
+                    editable: true,
+                    // autoWidth: true
                   },
                   {
                     type: "field",
-                    fieldName: "tcp_sent_by",
-                    label: "tcp_sent_by",
-                  },
-                  {
-                    type: "field",
-                    fieldName: "tcp_sent_date",
-                    label: "tcp sent date",
+                    fieldName: "permission_oda_req_sent_by",
+                    label: "Запит на погодження ОВА/ОДА надіслано ким",
+                    editable: true,
+                    // autoWidth: true
                   },
                 ],
               },
               {
                 type: "group",
-                label: "Request for permission",
+                label: "Погодження від ОВА/ОДА",
                 columnTemplates: [
                   {
                     type: "field",
-                    fieldName: "request_for_permission",
-                    label: "request_for_permission",
+                    fieldName: "permission_oda_ans_num",
+                    label: "Номер листа відповіді від ОВА/ОДА",
+                    editable: true,
+                    // autoWidth: true
                   },
                   {
                     type: "field",
-                    fieldName: "request_permission_sent_by",
-                    label: "request_permission_sent_by",
+                    fieldName: "permission_oda_ans_date",
+                    label: "Дата листа відповіді від ОВА/ОДА",
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    },
+                    editable: true,
+                    // autoWidth: true
                   },
                   {
                     type: "field",
-                    fieldName: "request_permission_letter_numbe",
-                    label: "request permission letter number",
+                    fieldName: "permission_oda_ans_result",
+                    label: "Результат погодження від ОВА/ОДА",
+                    editable: true,
+                    // autoWidth: true
                   },
                   {
                     type: "field",
-                    fieldName: "request_permission_letter_date",
-                    label: "request_permission_letter_date",
+                    fieldName: "permission_oda_ans_comment",
+                    label: "Коментар до відмови ОВА/ОДА",
+                    editable: true,
+                    // autoWidth: true
                   },
                 ],
               },
               {
                 type: "group",
-                label: "Permission",
+                label: "Запит на розпорядження ЦПМД",
+                collapsed: true, // Keep this group collapsed by default
                 columnTemplates: [
                   {
                     type: "field",
-                    fieldName: "permission_number",
-                    label: "permission_number",
+                    fieldName: "permission_nmac_req_num",
+                    label: "Номер запиту на розпорядження ЦПМД",
+                    editable: true,
+                    // autoWidth: true
                   },
                   {
                     type: "field",
-                    fieldName: "permission_date",
-                    label: "permission_date",
-                  },
+                    fieldName: "permission_nmac_req_date",
+                    label: "Дата запиту на розпорядження ЦПМД",
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    },
+                    editable: true,
+                    // autoWidth: true
+                  },                  
+                  {
+                    type: "field",
+                    fieldName: "permission_nmac_req_sent_by",
+                    label: "Запит на розпорядження ЦПМД надіслано ким",
+                    editable: true,
+                    // autoWidth: true
+                  },                  
                 ],
               },
               {
                 type: "group",
-                label: "Inspection",
+                label: "Первинне розпорядження ЦПМД",
+                collapsed: true, // Keep this group collapsed by default
                 columnTemplates: [
                   {
                     type: "field",
-                    fieldName: "request_inspection_sent_by",
-                    label: "request_inspection_sent_by",
+                    fieldName: "first_permission_nmac_num",
+                    label: "Номер первинного розпорядження ЦПМД",
+                    editable: true,
+                    // autoWidth: true
                   },
                   {
                     type: "field",
-                    fieldName: "request_inspection_date",
-                    label: "request_inspection_date",
+                    fieldName: "first_permission_nmac_date",
+                    label: "Дата первинного розпорядження ЦПМД",
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    },
+                    editable: true,
+                    // autoWidth: true
+                  },                  
+                  {
+                    type: "field",
+                    fieldName: "first_permission_nmac_comment",
+                    label: "Коментар щодо невключення до розпорядження ЦПМД",
+                    editable: true,
+                    // autoWidth: true
+                  }, 
+                  {
+                    type: "field",
+                    fieldName: "first_permission_nmac_st_date",
+                    label: "Дата, з якої діє первинне розпорядження",
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    },
+                    editable: true,
+                    // autoWidth: true
                   },
                   {
                     type: "field",
-                    fieldName: "request_inspection_answer_date",
-                    label: "request_inspection_answer_date",
+                    fieldName: "first_permission_nmac_en_date",
+                    label: "Дата, до якої діє первинне розпорядження",
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    },
+                    editable: true,
+                    // autoWidth: true
+                  },                 
+                ],
+              },
+              {
+                type: "group",
+                label: "Запит на Розпорядження ЦПМД на продовження робіт",
+                collapsed: true, // Keep this group collapsed by default
+                columnTemplates: [
+                  {
+                    type: "field",
+                    fieldName: "cont_perm_nmac_req_num",
+                    label: "Номер запиту на Розпорядження на продовження робіт",
+                    editable: true,
+                    // autoWidth: true
                   },
+                  {
+                    type: "field",
+                    fieldName: "cont_perm_nmac_req_date",
+                    label: "Дата запиту на Розпорядження на продовження робіт",
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    },
+                    editable: true,
+                    // autoWidth: true
+                  },                  
+                  {
+                    type: "field",
+                    fieldName: "cont_perm_nmac_req_sent_by",
+                    label: "Запит на Розпорядження на продовження робіт надіслано ким",
+                    editable: true,
+                    // autoWidth: true
+                  },                  
+                ],
+              },
+              {
+                type: "group",
+                label: "Розпорядження ЦПМД на продовження робіт",
+                collapsed: true, // Keep this group collapsed by default
+                columnTemplates: [
+                  {
+                    type: "field",
+                    fieldName: "cont_perm_nmac_num",
+                    label: "Номер Розпорядження на продовження робіт",
+                    editable: true,
+                    // autoWidth: true
+                  },
+                  {
+                    type: "field",
+                    fieldName: "cont_perm_nmac_date",
+                    label: "Дата Розпорядження на продовження робіт",
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    },
+                    editable: true,
+                    // autoWidth: true
+                  },
+                  {
+                    type: "field",
+                    fieldName: "cont_perm_nmac_st_date",
+                    label: "Дата, з якої діє Розпорядження на продовження робіт",
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    },
+                    editable: true,
+                    // autoWidth: true
+                  },
+                  {
+                    type: "field",
+                    fieldName: "cont_perm_nmac_en_date",
+                    label: "Дата, до якої діє Розпорядження на продовження робіт",
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    },
+                    editable: true,
+                    // autoWidth: true
+                  },                 
+                ],
+              },
+              {
+                type: "group",
+                label: "Заявка на інспектування",
+                collapsed: true, // Keep this group collapsed by default
+                columnTemplates: [
+                  {
+                    type: "field",
+                    fieldName: "inspection_req_num",
+                    label: "Номер Заявки на інспектування",
+                    editable: true,
+                    // autoWidth: true
+                  },
+                  {
+                    type: "field",
+                    fieldName: "inspection_req_date",
+                    label: "Дата Заявки на інспектування",
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    },
+                    editable: true,
+                    // autoWidth: true
+                  },
+                  {
+                    type: "field",
+                    fieldName: "inspection_req_sent_by",
+                    label: "Заявка на інспектування надіслана ким",                    
+                    editable: true,
+                    // autoWidth: true
+                  },             
+                ],
+              },
+              {
+                type: "group",
+                label: "Заявка на визначений орган інспектування",
+                collapsed: true, // Keep this group collapsed by default
+                columnTemplates: [
                   {
                     type: "field",
                     fieldName: "inspection_org",
-                    label: "inspection_org",
+                    label: "Призначений орган інспектування",
+                    editable: true,
+                    // autoWidth: true
                   },
+                  {
+                    type: "field",
+                    fieldName: "inspection_req_org_num",
+                    label: "Номер Заявки на визначений орган інспектування",
+                    editable: true,
+                    // autoWidth: true
+                  },
+                  {
+                    type: "field",
+                    fieldName: "inspection_req_org_date",
+                    label: "Дата Заявки на визначений орган інспектування",
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    },
+                    editable: true,
+                    // autoWidth: true
+                  },
+                  {
+                    type: "field",
+                    fieldName: "inspection_req_org_sent_by",
+                    label: "Заявка на визначений орган інспектування надіслано ким",                    
+                    editable: true,
+                    // autoWidth: true
+                  },             
+                ],
+              },
+              {
+                type: "group",
+                label: "Інспектування",
+                collapsed: true, // Keep this group collapsed by default
+                columnTemplates: [
+                  {
+                    type: "field",
+                    fieldName: "inspection_date",
+                    label: "Дата інспектування",
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    },
+                    editable: true,
+                    // autoWidth: true
+                  },
+                  {
+                    type: "field",
+                    fieldName: "inspection_act_num",
+                    label: "Номер акту інспектування",
+                    editable: true,
+                    // autoWidth: true
+                  },
+                  {
+                    type: "field",
+                    fieldName: "inspection_act_date",
+                    label: "Дата акту інспектування",
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    },
+                    editable: true,
+                    // autoWidth: true
+                  },                           
+                ],
+              },
+              {
+                type: "group",
+                label: "Сертифікат та Гарантійний лист",
+                collapsed: true, // Keep this group collapsed by default
+                columnTemplates: [
+                  {
+                    type: "field",
+                    fieldName: "certificate_num",
+                    label: "Номер сертифікату",
+                    editable: true,
+                    // autoWidth: true
+                  },
+                  {
+                    type: "field",
+                    fieldName: "certificate_date",
+                    label: "Дата сертифікату",
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    },
+                    editable: true,
+                    // autoWidth: true
+                  },  
+                  {
+                    type: "field",
+                    fieldName: "warrant_letter_num",
+                    label: "Номер гарантійного листа",
+                    editable: true,
+                    // autoWidth: true
+                  },
+                  {
+                    type: "field",
+                    fieldName: "warrant_letter_date",
+                    label: "Дата гарантійного листа",
+                    format: {
+                        dateFormat: "long-month-day-year", // Options: "short-date", "long-date", "day-full-month-year", etc.
+                        locale: "uk-UA" // Enforce a specific locale (e.g., dd/mm/yyyy)
+                    },
+                    editable: true,
+                    // autoWidth: true
+                  },                          
                 ],
               },
             ],
@@ -932,18 +1430,79 @@ tableTemplate: {
         console.log("rightPanel element:", rightPanel);
         console.log("selectedCountDiv element:", selectedCountDiv);
         
+        // Extract task codes from selected features
+        const taskCodes = selectedFeatures.map(feature => {
+          if (feature.feature && feature.feature.attributes && feature.feature.attributes.task_code) {
+            return feature.feature.attributes.task_code;
+          }
+          return feature.attributes && feature.attributes.task_code ? feature.attributes.task_code : 'N/A';
+        });
+        
         // Update title and count based on selection
         if (selectedFeatures.length === 1) {
           panelTitle.textContent = "Редагування";
-          selectedCountDiv.textContent = `Вибрано об'єкт: ${selectedFeatures[0].objectId}`;
+          selectedCountDiv.textContent = `Вибрано: ${taskCodes[0]}`;
         } else {
           panelTitle.textContent = "Масове редагування";
-          selectedCountDiv.textContent = `Вибрано об'єктів: ${selectedFeatures.length}`;
+          selectedCountDiv.textContent = `Вибрано таски: ${taskCodes.join(', ')}`;
         }
         
         rightPanel.classList.add("visible");
         
         console.log("Panel classes after add:", rightPanel.className);
+        
+        // Collapse all form groups after a short delay to override default behavior
+        setTimeout(() => {
+          // Target calcite-block elements specifically
+          const calciteBlocks = document.querySelectorAll('calcite-block.esri-feature-form__group');
+          let collapsedCount = 0;
+          
+          calciteBlocks.forEach(block => {
+            try {
+              // Check if the block is expanded and collapse it
+              if (block.hasAttribute('open') || block.hasAttribute('expanded')) {
+                // Remove the open and expanded attributes to collapse
+                block.removeAttribute('open');
+                block.removeAttribute('expanded');
+                collapsedCount++;
+                console.log("Collapsed calcite-block group");
+              }
+            } catch (e) {
+              console.log("Calcite block collapse failed:", e);
+            }
+          });
+          
+          // If calcite-block approach didn't work, try clicking headers
+          if (collapsedCount === 0) {
+            const groupHeaders = document.querySelectorAll([
+              '.esri-form__group-header',
+              '.esri-form__group-title',
+              '[class*="group-header"]',
+              '[class*="group-title"]'
+            ].join(', '));
+            
+            groupHeaders.forEach(header => {
+              try {
+                // Look for any button within the header
+                const button = header.querySelector('button') || header.querySelector('[role="button"]');
+                if (button) {
+                  button.click();
+                  collapsedCount++;
+                  console.log("Collapsed group via header button");
+                } else {
+                  // If no button, try clicking the header itself
+                  header.click();
+                  collapsedCount++;
+                  console.log("Collapsed group via header click");
+                }
+              } catch (e) {
+                console.log("Header click failed:", e);
+              }
+            });
+          }
+          
+          console.log("Collapse attempt completed. Collapsed groups:", collapsedCount);
+        }, 500);
         
         // Create a proper graphic object for the form
         // Use the first selected feature as a template but clear its attributes
@@ -1150,12 +1709,17 @@ tableTemplate: {
           rayon: currentFilters.rayon
         });
         
-        // Populate settlement (depends on oblast, rayon, and council)
-        await populateFilter('settlement', { 
+        // Populate locality (depends on oblast, rayon, and council)
+        await populateFilter('locality', { 
           oblast: currentFilters.oblast,
           rayon: currentFilters.rayon,
           council: currentFilters.council
         });
+        
+        // Populate new filters
+        await populateFilter('task_code');
+        await populateFilter('task_name');
+        await populateFilter('status_name');
       }
 
       // Function to build filter expression
@@ -1193,10 +1757,10 @@ tableTemplate: {
         if (!currentFilters.oblast) {
           currentFilters.rayon = null;
           currentFilters.council = null;
-          currentFilters.settlement = null;
+          currentFilters.locality = null;
           document.getElementById('rayonFilter').value = '';
           document.getElementById('councilFilter').value = '';
-          document.getElementById('settlementFilter').value = '';
+          document.getElementById('localityFilter').value = '';
         }
         
         // Repopulate dependent dropdowns
@@ -1205,7 +1769,7 @@ tableTemplate: {
           oblast: currentFilters.oblast,
           rayon: currentFilters.rayon
         });
-        await populateFilter('settlement', { 
+        await populateFilter('locality', { 
           oblast: currentFilters.oblast,
           rayon: currentFilters.rayon,
           council: currentFilters.council
@@ -1220,9 +1784,9 @@ tableTemplate: {
         // Reset dependent filters
         if (!currentFilters.rayon) {
           currentFilters.council = null;
-          currentFilters.settlement = null;
+          currentFilters.locality = null;
           document.getElementById('councilFilter').value = '';
-          document.getElementById('settlementFilter').value = '';
+          document.getElementById('localityFilter').value = '';
         }
         
         // Repopulate dependent dropdowns
@@ -1230,7 +1794,7 @@ tableTemplate: {
           oblast: currentFilters.oblast,
           rayon: currentFilters.rayon
         });
-        await populateFilter('settlement', { 
+        await populateFilter('locality', { 
           oblast: currentFilters.oblast,
           rayon: currentFilters.rayon,
           council: currentFilters.council
@@ -1244,12 +1808,12 @@ tableTemplate: {
         
         // Reset dependent filters
         if (!currentFilters.council) {
-          currentFilters.settlement = null;
-          document.getElementById('settlementFilter').value = '';
+          currentFilters.locality = null;
+          document.getElementById('localityFilter').value = '';
         }
         
         // Repopulate dependent dropdowns
-        await populateFilter('settlement', { 
+        await populateFilter('locality', { 
           oblast: currentFilters.oblast,
           rayon: currentFilters.rayon,
           council: currentFilters.council
@@ -1258,8 +1822,24 @@ tableTemplate: {
         applyFilters();
       });
 
-      document.getElementById('settlementFilter').addEventListener('change', (e) => {
-        currentFilters.settlement = e.target.value || null;
+      document.getElementById('localityFilter').addEventListener('change', (e) => {
+        currentFilters.locality = e.target.value || null;
+        applyFilters();
+      });
+
+      // New filters event listeners
+      document.getElementById('task_codeFilter').addEventListener('change', (e) => {
+        currentFilters.task_code = e.target.value || null;
+        applyFilters();
+      });
+
+      document.getElementById('task_nameFilter').addEventListener('change', (e) => {
+        currentFilters.task_name = e.target.value || null;
+        applyFilters();
+      });
+
+      document.getElementById('status_nameFilter').addEventListener('change', (e) => {
+        currentFilters.status_name = e.target.value || null;
         applyFilters();
       });
 
@@ -1268,13 +1848,19 @@ tableTemplate: {
         document.getElementById('oblastFilter').value = '';
         document.getElementById('rayonFilter').value = '';
         document.getElementById('councilFilter').value = '';
-        document.getElementById('settlementFilter').value = '';
+        document.getElementById('localityFilter').value = '';
+        document.getElementById('task_codeFilter').value = '';
+        document.getElementById('task_nameFilter').value = '';
+        document.getElementById('status_nameFilter').value = '';
         
         currentFilters = {
           oblast: null,
           rayon: null,
           council: null,
-          settlement: null
+          locality: null,
+          task_code: null,
+          task_name: null,
+          status_name: null
         };
         
         // Repopulate all filters without restrictions
@@ -1530,8 +2116,26 @@ tableTemplate: {
               </select>
             </div>
             <div class="filter-group">
-              <label for="settlementFilter">Населений пункт:</label>
-              <select id="settlementFilter">
+              <label for="localityFilter">Населений пункт:</label>
+              <select id="localityFilter">
+                <option value="">Всі</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="task_codeFilter">Таск код:</label>
+              <select id="task_codeFilter">
+                <option value="">Всі</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="task_nameFilter">Назва таски:</label>
+              <select id="task_nameFilter">
+                <option value="">Всі</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="status_nameFilter">Статус:</label>
+              <select id="status_nameFilter">
                 <option value="">Всі</option>
               </select>
             </div>
