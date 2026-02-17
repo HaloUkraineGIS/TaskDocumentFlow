@@ -367,6 +367,62 @@
         background: #005a87;
       }
 
+      /* User bar */
+      #userBar {
+        position: fixed;
+        top: 0;
+        right: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(255,255,255,0.95);
+        backdrop-filter: blur(4px);
+        padding: 6px 14px;
+        border-bottom-left-radius: 8px;
+        box-shadow: -1px 1px 6px rgba(0,0,0,0.15);
+        font-size: 13px;
+        color: #323232;
+      }
+
+      #userBar .user-icon {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: #0079c1;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+
+      #userBar .user-name {
+        font-weight: 600;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      #btnLogout {
+        padding: 4px 10px;
+        background: transparent;
+        color: #0079c1;
+        border: 1px solid #0079c1;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      #btnLogout:hover {
+        background: #0079c1;
+        color: white;
+      }
+
       @keyframes fadeIn {
         from { opacity: 0; }
         to { opacity: 1; }
@@ -415,6 +471,19 @@
     } catch {
       await esriId.getCredential(`${PORTAL_URL}/sharing`);
     }
+
+    // ── Show logged-in user ───────────────────────────────────────────────────
+    const credential = esriId.credentials?.[0];
+    if (credential) {
+      const userId = credential.userId || "";
+      document.getElementById("userName").textContent = userId;
+      document.getElementById("userInitial").textContent = userId.charAt(0).toUpperCase() || "?";
+    }
+
+    document.getElementById("btnLogout").addEventListener("click", () => {
+      esriId.destroyCredentials();
+      window.location.reload();
+    });
     // ─────────────────────────────────────────────────────────────────────────
 
     let highlight, editFeature;
@@ -2112,6 +2181,13 @@
   </head>
 
   <body>
+    <!-- User bar -->
+    <div id="userBar">
+      <div class="user-icon" id="userInitial">?</div>
+      <span class="user-name" id="userName">...</span>
+      <button id="btnLogout">Вийти</button>
+    </div>
+
     <div class="main-container">
       <!-- Left panel with map and table -->
       <div class="left-panel">
