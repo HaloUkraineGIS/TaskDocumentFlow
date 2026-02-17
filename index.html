@@ -124,6 +124,27 @@
         background: white;
       }
 
+      #imsmaSearch {
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+        min-width: 170px;
+        background: white;
+        transition: border-color 0.2s;
+      }
+
+      #imsmaSearch:focus {
+        outline: none;
+        border-color: #0079c1;
+        box-shadow: 0 0 0 2px rgba(0,121,193,0.15);
+      }
+
+      #imsmaSearch.active {
+        border-color: #0079c1;
+        background: #f0f7ff;
+      }
+
       #clearFilters {
         padding: 8px 16px;
         margin-top: 18px;
@@ -494,7 +515,8 @@
       locality: null,
       task_code: null,
       task_name: null,
-      status_name: null
+      status_name: null,
+      imsma_hazard_code: null
     };
     let selectedFeatures = [];
     let bulkEditForm;
@@ -1819,9 +1841,13 @@
         
         Object.keys(currentFilters).forEach(field => {
           if (currentFilters[field]) {
-            // Escape single quotes in values
             const value = currentFilters[field].replace(/'/g, "''");
-            conditions.push(`${field} = '${value}'`);
+            // IMSMA code uses LIKE for partial match; others use exact match
+            if (field === 'imsma_hazard_code') {
+              conditions.push(`UPPER(${field}) LIKE UPPER('%${value}%')`);
+            } else {
+              conditions.push(`${field} = '${value}'`);
+            }
           }
         });
         
@@ -1934,6 +1960,18 @@
         applyFilters();
       });
 
+      // IMSMA Hazard Code search with debounce
+      let imsmaDebounceTimer = null;
+      document.getElementById('imsmaSearch').addEventListener('input', (e) => {
+        const val = e.target.value.trim();
+        e.target.classList.toggle('active', val.length > 0);
+        clearTimeout(imsmaDebounceTimer);
+        imsmaDebounceTimer = setTimeout(() => {
+          currentFilters.imsma_hazard_code = val || null;
+          applyFilters();
+        }, 350);
+      });
+
       // Clear all filters
       document.getElementById('clearFilters').addEventListener('click', async () => {
         document.getElementById('oblastFilter').value = '';
@@ -1943,6 +1981,8 @@
         document.getElementById('task_codeFilter').value = '';
         document.getElementById('task_nameFilter').value = '';
         document.getElementById('status_nameFilter').value = '';
+        document.getElementById('imsmaSearch').value = '';
+        document.getElementById('imsmaSearch').classList.remove('active');
         
         currentFilters = {
           oblast: null,
@@ -1951,7 +1991,8 @@
           locality: null,
           task_code: null,
           task_name: null,
-          status_name: null
+          status_name: null,
+          imsma_hazard_code: null
         };
         
         // Repopulate all filters without restrictions
@@ -2236,6 +2277,10 @@
               <select id="status_nameFilter">
                 <option value="">Всі</option>
               </select>
+            </div>
+            <div class="filter-group">
+              <label for="imsmaSearch">IMSMA Hazard Code:</label>
+              <input type="text" id="imsmaSearch" placeholder="Введіть код..." autocomplete="off" />
             </div>
             <button id="clearFilters">Очистити фільтри</button>
           </div>
