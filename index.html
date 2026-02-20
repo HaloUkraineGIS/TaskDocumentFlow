@@ -534,6 +534,18 @@
         title: "Редагування",
         // description: "Змінити значення для вибраних об'єктів",
         elements: [
+          {
+                type: "group",
+                label: "Наявність в плані гум.розмінування",
+                collapsed: true, // Keep this group collapsed by default
+                elements: [                  
+                  {
+                    type: "field",
+                    fieldName: "exist_in_pr_plan",
+                    label: "Наявність в плані гум.розмінування",
+                  },                  
+                ],
+              },
             {
                 type: "group",
                 label: "План розмінування",
