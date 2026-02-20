@@ -872,6 +872,16 @@
           tableTemplate: {
             // autocast to TableTemplate
             columnTemplates: [
+
+            {
+                type: "field",
+                fieldName: "task_id",
+                label: "task_id",
+                editable: false, // read only
+                direction: "descending", // Sort in descending order initially
+                initialSortPriority: 0,  // Highest priority sort
+                visible: false                    
+              },
               // Frozen column at top level (outside groups)
               {
                 type: "field",
