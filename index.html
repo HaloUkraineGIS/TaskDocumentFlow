@@ -871,17 +871,7 @@
           selectionEnabled: true, // Enable row selection
           tableTemplate: {
             // autocast to TableTemplate
-            columnTemplates: [
-
-            {
-                type: "field",
-                fieldName: "task_id",
-                label: "task_id",
-                editable: false, // read only
-                direction: "descending", // Sort in descending order initially
-                initialSortPriority: 0,  // Highest priority sort
-                visible: false                    
-              },
+            columnTemplates: [            
               // Frozen column at top level (outside groups)
               {
                 type: "field",
@@ -891,6 +881,15 @@
                 autoWidth: true,
                 frozen: true                    
               },
+              {
+                type: "field",
+                fieldName: "task_id",
+                label: "task_id",
+                editable: false, // read only
+                direction: "asc", // Sort in descending order initially
+                initialSortPriority: 0,  // Highest priority sort
+                visible: false
+                  },
               // takes an array of GroupColumnTemplate and FieldColumnTemplate              
               {
                 // autocast to GroupColumnTemplate
