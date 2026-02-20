@@ -120,7 +120,6 @@
         border: 1px solid #ccc;
         border-radius: 4px;
         font-size: 14px;
-        min-width: 150px;
         background: white;
       }
 
@@ -459,6 +458,81 @@
           opacity: 1;
         }
       }
+
+      /* ===== Searchable Select ===== */
+      .searchable-select-wrapper {
+        position: relative;
+      }
+
+      select.searchable-select-display {
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 14px;
+        background: white;
+        cursor: pointer;
+        width: auto;
+      }
+
+      .searchable-select-dropdown {
+        display: none;
+        position: fixed;
+        z-index: 99999;
+        background: #fff;
+        border: 1px solid #767676;
+        border-radius: 0;
+        box-shadow: none;
+        min-width: 180px;
+        max-width: 400px;
+        font-size: 14px;
+        font-family: inherit;
+      }
+
+      .searchable-select-search {
+        width: 100%;
+        padding: 4px 6px;
+        border: none;
+        border-bottom: 1px solid #ccc;
+        font-size: 13px;
+        font-family: inherit;
+        box-sizing: border-box;
+        outline: none;
+        background: #f5f5f5;
+      }
+
+      .searchable-select-options {
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
+      .searchable-select-option {
+        padding: 2px 6px;
+        font-size: 14px;
+        font-family: inherit;
+        cursor: default;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #000;
+      }
+
+      .searchable-select-option:hover {
+        background: #0078d7;
+        color: #fff;
+      }
+
+      .searchable-select-option.selected {
+        background: #0078d7;
+        color: #fff;
+      }
+
+      .searchable-select-no-results {
+        padding: 4px 6px;
+        font-size: 14px;
+        font-family: inherit;
+        color: #666;
+      }
+      /* ===== End Searchable Select ===== */
     </style>
 
 <script type="module">
@@ -2121,6 +2195,139 @@
       // Initialize resizers after everything is loaded
       initializeResizers();
 
+      // ===== Universal Searchable Select =====
+      const _allSearchableSelects = [];
+
+      function makeSearchableSelect(filterId) {
+        const wrapper   = document.getElementById(filterId + 'Wrapper');
+        const display   = document.getElementById(filterId + 'Display');
+        const dropdown  = document.getElementById(filterId + 'Dropdown');
+        const searchInp = document.getElementById(filterId + 'Search');
+        const optionsCt = document.getElementById(filterId + 'Options');
+        const hidden    = document.getElementById(filterId);
+
+        if (!display) { console.error('[SearchableSelect] Not found:', filterId); return; }
+
+        let allOpts = [];
+        let selVal  = '';
+
+        document.body.appendChild(dropdown);
+
+        function reposition() {
+          const scale = document.body.getBoundingClientRect().width / document.body.offsetWidth;
+          const r = display.getBoundingClientRect();
+          dropdown.style.top      = (r.bottom / scale + 1) + 'px';
+          dropdown.style.left     = (r.left   / scale) + 'px';
+          dropdown.style.minWidth = Math.max(r.width / scale, 180) + 'px';
+        }
+
+        function render(q) {
+          optionsCt.innerHTML = '';
+          q = (q || '').toLowerCase();
+          const list = q ? allOpts.filter(v => v.toLowerCase().includes(q)) : allOpts;
+
+          const all = document.createElement('div');
+          all.className = 'searchable-select-option' + (!selVal ? ' selected' : '');
+          all.textContent = 'Всі';
+          all.addEventListener('mousedown', e => { e.preventDefault(); pick('', 'Всі'); });
+          optionsCt.appendChild(all);
+
+          if (list.length === 0) {
+            const nr = document.createElement('div');
+            nr.className = 'searchable-select-no-results';
+            nr.textContent = 'Нічого не знайдено';
+            optionsCt.appendChild(nr);
+            return;
+          }
+          list.forEach(v => {
+            const el = document.createElement('div');
+            el.className = 'searchable-select-option' + (v === selVal ? ' selected' : '');
+            el.textContent = v;
+            el.addEventListener('mousedown', e => { e.preventDefault(); pick(v, v); });
+            optionsCt.appendChild(el);
+          });
+        }
+
+        function setLabel(lbl) {
+          display.options[0].text = lbl || 'Всі';
+        }
+
+        function pick(val, lbl) {
+          selVal = val;
+          setLabel(lbl);
+          hidden.value = val;
+          hidden.dispatchEvent(new Event('change'));
+          close();
+        }
+
+        function open() {
+          _allSearchableSelects.forEach(s => { if (s !== inst) s.close(); });
+          reposition();
+          dropdown.style.display = 'block';
+          searchInp.value = '';
+          render('');
+          setTimeout(() => searchInp.focus(), 10);
+        }
+
+        function close() {
+          dropdown.style.display = 'none';
+        }
+
+        display.addEventListener('mousedown', e => {
+          e.preventDefault();
+          display.focus();
+          dropdown.style.display === 'none' ? open() : close();
+        });
+
+        display.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') { e.preventDefault(); open(); }
+          if (e.key === 'Escape') close();
+        });
+
+        searchInp.addEventListener('input', () => render(searchInp.value));
+        searchInp.addEventListener('keydown', e => { if (e.key === 'Escape') { close(); display.focus(); } });
+
+        document.addEventListener('click', e => {
+          if (!wrapper.contains(e.target) && !dropdown.contains(e.target)) close();
+        });
+
+        window.addEventListener('resize', () => { if (dropdown.style.display !== 'none') reposition(); });
+        window.addEventListener('scroll', () => { if (dropdown.style.display !== 'none') reposition(); }, true);
+
+        // Watch hidden select — sync options into display + allOpts when populateFilter runs
+        new MutationObserver(() => {
+          allOpts = Array.from(hidden.options).map(o => o.value).filter(v => v !== '');
+          if (!allOpts.includes(selVal)) { selVal = ''; setLabel('Всі'); }
+          // Sync options into display <select> so browser sizes it correctly (width:auto)
+          const currentText = display.options[0] ? display.options[0].text : 'Всі';
+          display.innerHTML = '';
+          ['Всі', ...allOpts].forEach(v => {
+            const o = document.createElement('option');
+            o.textContent = v;
+            display.appendChild(o);
+          });
+          display.options[0].text = currentText;
+          if (dropdown.style.display !== 'none') render(searchInp.value);
+        }).observe(hidden, { childList: true });
+
+        // Reset label on clear filters
+        document.getElementById('clearFilters').addEventListener('click', () => {
+          selVal = ''; setLabel('Всі');
+        });
+
+        const inst = { close };
+        _allSearchableSelects.push(inst);
+      }
+
+      makeSearchableSelect('oblastFilter');
+      makeSearchableSelect('rayonFilter');
+      makeSearchableSelect('councilFilter');
+      makeSearchableSelect('localityFilter');
+      makeSearchableSelect('task_codeFilter');
+      makeSearchableSelect('task_nameFilter');
+      makeSearchableSelect('status_nameFilter');
+      // ===== End Searchable Select =====
+
       // Toast notification functions
       function showToast(type, title, message) {
         const overlay = document.getElementById('toastOverlay');
@@ -2258,46 +2465,109 @@
         <div class="table-container">
           <div id="filterContainer">
             <div class="filter-group">
-              <label for="oblastFilter">Область:</label>
-              <select id="oblastFilter">
-                <option value="">Всі</option>
-              </select>
+              <label for="oblastFilterDisplay">Область:</label>
+              <div class="searchable-select-wrapper" id="oblastFilterWrapper">
+                <select class="searchable-select-display" id="oblastFilterDisplay" tabindex="0">
+                  <option>Всі</option>
+                </select>
+                <div class="searchable-select-dropdown" id="oblastFilterDropdown">
+                  <input class="searchable-select-search" id="oblastFilterSearch" type="text" placeholder="Пошук..." autocomplete="off" />
+                  <div class="searchable-select-options" id="oblastFilterOptions"></div>
+                </div>
+                <select id="oblastFilter" style="display:none">
+                  <option value="">Всі</option>
+                </select>
+              </div>
             </div>
             <div class="filter-group">
-              <label for="rayonFilter">Район:</label>
-              <select id="rayonFilter">
-                <option value="">Всі</option>
-              </select>
+              <label for="rayonFilterDisplay">Район:</label>
+              <div class="searchable-select-wrapper" id="rayonFilterWrapper">
+                <select class="searchable-select-display" id="rayonFilterDisplay" tabindex="0">
+                  <option>Всі</option>
+                </select>
+                <div class="searchable-select-dropdown" id="rayonFilterDropdown">
+                  <input class="searchable-select-search" id="rayonFilterSearch" type="text" placeholder="Пошук..." autocomplete="off" />
+                  <div class="searchable-select-options" id="rayonFilterOptions"></div>
+                </div>
+                <select id="rayonFilter" style="display:none">
+                  <option value="">Всі</option>
+                </select>
+              </div>
             </div>
             <div class="filter-group">
-              <label for="councilFilter">Рада:</label>
-              <select id="councilFilter">
-                <option value="">Всі</option>
-              </select>
+              <label for="councilFilterDisplay">Рада:</label>
+              <div class="searchable-select-wrapper" id="councilFilterWrapper">
+                <select class="searchable-select-display" id="councilFilterDisplay" tabindex="0">
+                  <option>Всі</option>
+                </select>
+                <div class="searchable-select-dropdown" id="councilFilterDropdown">
+                  <input class="searchable-select-search" id="councilFilterSearch" type="text" placeholder="Пошук..." autocomplete="off" />
+                  <div class="searchable-select-options" id="councilFilterOptions"></div>
+                </div>
+                <select id="councilFilter" style="display:none">
+                  <option value="">Всі</option>
+                </select>
+              </div>
             </div>
             <div class="filter-group">
-              <label for="localityFilter">Населений пункт:</label>
-              <select id="localityFilter">
-                <option value="">Всі</option>
-              </select>
+              <label for="localityFilterDisplay">Населений пункт:</label>
+              <div class="searchable-select-wrapper" id="localityFilterWrapper">
+                <select class="searchable-select-display" id="localityFilterDisplay" tabindex="0">
+                  <option>Всі</option>
+                </select>
+                <div class="searchable-select-dropdown" id="localityFilterDropdown">
+                  <input class="searchable-select-search" id="localityFilterSearch" type="text" placeholder="Пошук..." autocomplete="off" />
+                  <div class="searchable-select-options" id="localityFilterOptions"></div>
+                </div>
+                <select id="localityFilter" style="display:none">
+                  <option value="">Всі</option>
+                </select>
+              </div>
             </div>
             <div class="filter-group">
-              <label for="task_codeFilter">Таск код:</label>
-              <select id="task_codeFilter">
-                <option value="">Всі</option>
-              </select>
+              <label for="task_codeFilterDisplay">Таск код:</label>
+              <div class="searchable-select-wrapper" id="task_codeFilterWrapper">
+                <select class="searchable-select-display" id="task_codeFilterDisplay" tabindex="0">
+                  <option>Всі</option>
+                </select>
+                <div class="searchable-select-dropdown" id="task_codeFilterDropdown">
+                  <input class="searchable-select-search" id="task_codeFilterSearch" type="text" placeholder="Пошук..." autocomplete="off" />
+                  <div class="searchable-select-options" id="task_codeFilterOptions"></div>
+                </div>
+                <select id="task_codeFilter" style="display:none">
+                  <option value="">Всі</option>
+                </select>
+              </div>
             </div>
             <div class="filter-group">
-              <label for="task_nameFilter">Назва таски:</label>
-              <select id="task_nameFilter">
-                <option value="">Всі</option>
-              </select>
+              <label for="task_nameFilterDisplay">Назва таски:</label>
+              <div class="searchable-select-wrapper" id="task_nameFilterWrapper">
+                <select class="searchable-select-display" id="task_nameFilterDisplay" tabindex="0">
+                  <option>Всі</option>
+                </select>
+                <div class="searchable-select-dropdown" id="task_nameFilterDropdown">
+                  <input class="searchable-select-search" id="task_nameFilterSearch" type="text" placeholder="Пошук..." autocomplete="off" />
+                  <div class="searchable-select-options" id="task_nameFilterOptions"></div>
+                </div>
+                <select id="task_nameFilter" style="display:none">
+                  <option value="">Всі</option>
+                </select>
+              </div>
             </div>
             <div class="filter-group">
-              <label for="status_nameFilter">Статус:</label>
-              <select id="status_nameFilter">
-                <option value="">Всі</option>
-              </select>
+              <label for="status_nameFilterDisplay">Статус:</label>
+              <div class="searchable-select-wrapper" id="status_nameFilterWrapper">
+                <select class="searchable-select-display" id="status_nameFilterDisplay" tabindex="0">
+                  <option>Всі</option>
+                </select>
+                <div class="searchable-select-dropdown" id="status_nameFilterDropdown">
+                  <input class="searchable-select-search" id="status_nameFilterSearch" type="text" placeholder="Пошук..." autocomplete="off" />
+                  <div class="searchable-select-options" id="status_nameFilterOptions"></div>
+                </div>
+                <select id="status_nameFilter" style="display:none">
+                  <option value="">Всі</option>
+                </select>
+              </div>
             </div>
             <div class="filter-group">
               <label for="imsmaSearch">IMSMA Hazard Code:</label>
